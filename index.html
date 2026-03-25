@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>သရောဒယ အဆင့်မြင့်တွက်စက်</title>
+    
+    <style>
+        :root { --gold: #d4af37; --dark-red: #800000; --cream: #fffdd0; --black: #1a1a1a; --green: #2ecc71; --red: #ff4d4d; --blue: #3498db; }
+        body { background-color: var(--black); color: var(--cream); font-family: 'Pyidaungsu', sans-serif; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 650px; background: #1e1e1e; border: 2px solid var(--gold); border-radius: 12px; padding: 25px; box-shadow: 0 0 40px rgba(212, 175, 55, 0.15); }
+        h2 { background: var(--dark-red); color: var(--gold); text-align: center; padding: 15px; margin: -25px -25px 25px -25px; border-radius: 10px 10px 0 0; border-bottom: 2px solid var(--gold); }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 8px; color: var(--gold); font-weight: bold; }
+        input, select { width: 100%; padding: 12px; border: 1px solid var(--gold); background: #2a2a2a; color: white; border-radius: 6px; box-sizing: border-box; font-size: 1rem; outline: none; }
+        button { width: 100%; padding: 16px; background: var(--dark-red); color: var(--gold); border: 2px solid var(--gold); font-weight: bold; cursor: pointer; border-radius: 8px; font-size: 1.1rem; margin-top: 15px; }
+        .result-box { margin-top: 25px; padding: 18px; border: 1px dashed var(--gold); background: rgba(128, 0, 0, 0.15); display: none; border-radius: 10px; line-height: 1.8; }
+        .info-card { margin-top: 15px; padding: 15px; border-radius: 8px; font-size: 0.95rem; }
+        .warning { background: rgba(255, 77, 77, 0.1); border-left: 5px solid var(--red); color: #ffcccc; }
+        .success { background: rgba(46, 204, 113, 0.1); border-left: 5px solid var(--green); color: #ccffcc; }
+        .rahu-card { background: #252525; border-left: 5px solid var(--blue); margin-top: 20px; padding: 15px; border-radius: 8px; }
+        .footer { text-align: center; margin-top: 30px; font-size: 0.8rem; color: #777; }
+        .badge { background: var(--gold); color: black; padding: 2px 8px; border-radius: 4px; font-weight: bold; margin-left: 5px; }
+    </style>
+    
+</head>
+<body>
+
+<div class="container">
+    <h2>သရောဒယ အဆင့်မြင့်တွက်စက်</h2>
+    
+    <div class="input-group">
+        <label>မွေးနေ့ရွေးပါ</label>
+        <select id="birthDay">
+            <option value="sun">တနင်္ဂနွေ</option>
+            <option value="mon">တနင်္လာ</option>
+            <option value="tue">အင်္ဂါ</option>
+            <option value="wed">ဗုဒ္ဓဟူး / ရာဟု</option>
+            <option value="thu">ကြာသပတေး</option>
+            <option value="fri">သောကြာ</option>
+            <option value="sat">စနေ</option>
+        </select>
+    </div>
+
+    <div class="input-group">
+        <label>လူအမည်</label>
+        <input type="text" id="userName" placeholder="ဥပမာ - ဇော် အောင် ထွတ်">
+    </div>
+
+    <div class="input-group">
+        <label>ဘုရားဘွဲ့</label>
+        <input type="text" id="pagodaName" placeholder="ဥပမာ - ကျိုက် က လို့">
+    </div>
+
+    <div class="input-group">
+        <label>လှူဖွယ်</label>
+        <input type="text" id="offeringName" placeholder="ဥပမာ - ကိတ်">
+    </div>
+
+    <button onclick="calculateAll()">တွက်ချက်စစ်ဆေးမည်</button>
+
+    <div id="result" class="result-box"></div>
+    <div id="rahuInfo"></div>
+
+    <div class="footer">© 2026 Zaw Aung Htut. All rights reserved.</div>
+</div>
+
+<script>
+    const charValues = {
+        'က': 5, 'ခ': 5, 'ဂ': 5, 'ဃ': 5, 'င': 5, 'စ': 6, 'ဆ': 6, 'ဇ': 6, 'ဈ': 6, 'ည': 6,
+        'ဋ': 4, 'ဌ': 4, 'ဍ': 4, 'ဎ': 4, 'ဏ': 4, 'တ': 7, 'ထ': 7, 'ဒ': 7, 'ဓ': 7, 'န': 7,
+        'ပ': 1, 'ဖ': 1, 'ဗ': 1, 'ဘ': 1, 'မ': 1, 'ယ': 3, 'ရ': 3, 'လ': 3, 'ဝ': 3, 'သ': 2, 'ဟ': 2, 'အ': 8, 'ဥ': 8, 'ဦ': 8, 'ဧ': 8
+    };
+
+    const waggaNames = ["ကျီး", "တံခွန်", "အိုး", "ခြင်္သေ့", "ခွေး", "နွား", "မြည်း", "ဆင်"];
+    
+    const dayElements = {
+        sun: "သပြေ၊ ဖန်ခါး (အေးမြသောဓာတ်)", mon: "သပြေ၊ ကံ့ကော် (အေးမြသောဓာတ်)",
+        tue: "ဆီး၊ ဇီး၊ ခေတ္တရာ (ပြင်းထန်သောဓာတ်)", wed: "တောင်ပိန္နဲ၊ ကျွန်း (အလယ်အလတ်)",
+        thu: "စကား၊ စံပယ် (နူးညံ့သောဓာတ်)", fri: "သီဟိုဠ်၊ သပြေ (အေးမြသောဓာတ်)",
+        sat: "ကျွန်းနက်၊ ကံ့ကော် (ပြင်းထန်သောဓာတ်)"
+    };
+
+    const rahuDatabase = {
+        2026: { nakt: "ရေဝတီ", desc: "ခရီးသွားခြင်းနှင့် လမ်းပန်းဆက်သွယ်ရေး ကောင်းမွန်သော နက္ခတ်ဖြစ်သည်။", mouth: ["ဒေ", "ဒေါ", "ချ", "ချိ"], phalita: ["အို", "ဝ", "ဝေ", "က", "ကု"] },
+        2027: { nakt: "ဥတ္တရဘဒြပို", desc: "တည်ငြိမ်အေးချမ်းခြင်းနှင့် ဘာသာရေးလိုက်စားရန် ကောင်းသောနက္ခတ်ဖြစ်သည်။", mouth: ["ဒု", "ည", "ညံ"], phalita: ["ရေ", "ရော", "လ", "လု"] }
+    };
+
+    function processWagga(text) {
+        if(!text) return { remainder: -1 };
+        let total = 0;
+        text.trim().split(/\s+/).forEach(p => {
+            for (let char of p) { if (charValues[char]) { total += charValues[char]; break; } }
+        });
+        return { remainder: total % 8, name: waggaNames[total % 8] };
+    }
+
+    function calculateAll() {
+        const u = processWagga(document.getElementById('userName').value);
+        const p = processWagga(document.getElementById('pagodaName').value);
+        const o = processWagga(document.getElementById('offeringName').value);
+        const bDay = document.getElementById('birthDay').value;
+        const currentYear = new Date().getFullYear();
+        const yearData = rahuDatabase[currentYear] || rahuDatabase[2026];
+
+        let resHTML = `<b>📊 ဝဂ္ဂနှင့် ဓာတ်သားစစ်ဆေးချက်</b><br>`;
+        resHTML += `အမည်: <span class="badge">${u.name}</span> | မွေးနေ့ဓာတ်သား: <b>${dayElements[bDay]}</b><br>`;
+
+        // ရန်ဝဂ္ဂ စစ်ဆေးချက် (မိမိမှ ရေတွက်လျှင် ၄ ခုမြောက်)
+        let enemyWaggaIdx = (u.remainder + 4) % 8;
+        let enemyWaggaName = waggaNames[enemyWaggaIdx];
+
+        if(p.remainder === enemyWaggaIdx || o.remainder === enemyWaggaIdx) {
+            resHTML += `<div class="info-card warning">⚠️ သတိ: သင်ရွေးချယ်ထားသော ဘုရား/လှူဖွယ်သည် သင့်အတွက် <b>ရန်ဝဂ္ဂ (${enemyWaggaName})</b> ဖြစ်နေပါသည်။ ရှောင်ကြဉ်သင့်သည်။</div>`;
+        } else if(u.remainder === p.remainder && p.remainder === o.remainder) {
+            resHTML += `<div class="info-card success">✅ ဝဂ္ဂတူညီပြီး ရန်ဝဂ္ဂမှလည်း လွတ်ကင်းပါသည်။ အကျိုးပေးထူးပါလိမ့်မည်။</div>`;
+        } else {
+            resHTML += `<div class="info-card">💡 အကြံပြုချက်: အနည်းဆုံး ရန်ဝဂ္ဂ <b>${enemyWaggaName}</b> မဖြစ်အောင် ဂရုစိုက်ပါ။</div>`;
+        }
+
+        document.getElementById('result').innerHTML = resHTML;
+        document.getElementById('result').style.display = 'block';
+
+        // ရာဟုကာလန + နက္ခတ်ဟောကိန်း
+        let rahuHTML = `<div class="rahu-card">`;
+        rahuHTML += `<b style="color:var(--blue)">🌑 ၂၀၂၆ ရာဟုကာလနစက်</b><br>`;
+        rahuHTML += `လက်ရှိနက္ခတ်: <b>${yearData.nakt}</b><br>`;
+        rahuHTML += `<small><i>(${yearData.desc})</i></small><br><br>`;
+        rahuHTML += `🌟 ယခုနှစ်အကျိုးပေးအက္ခရာ: <b class="phalita">${yearData.phalita.join('၊ ')}</b><br>`;
+        rahuHTML += `</div>`;
+
+        document.getElementById('rahuInfo').innerHTML = rahuHTML;
+    }
+</script>
+    <style>
+    <script>
+        :root { --gold: #d4af37; --dark-red: #800000; --cream: #fffdd0; --black: #1a1a1a; --green: #2ecc71; --red: #ff4d4d; --blue: #3498db; }
+        body { background-color: var(--black); color: var(--cream); font-family: 'Pyidaungsu', sans-serif; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        
+        /* Authentication UI */
+        #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 9999; display: flex; justify-content: center; align-items: center; }
+        .auth-box { background: #1e1e1e; border: 2px solid var(--gold); padding: 30px; border-radius: 12px; text-align: center; max-width: 400px; width: 90%; position: relative; }
+        .id-display { background: #333; color: var(--gold); padding: 10px; border-radius: 5px; font-weight: bold; margin: 15px 0; font-size: 1.2rem; border: 1px dashed var(--gold); }
+        .pass-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--gold); background: #2a2a2a; color: white; border-radius: 6px; text-align: center; font-size: 1.1rem; }
+        .calc-btn { width: 100%; padding: 16px; background: var(--dark-red); color: var(--gold); border: 2px solid var(--gold); font-weight: bold; cursor: pointer; border-radius: 8px; font-size: 1.1rem; }
+        
+        /* Admin Generator (ဆရာ့အတွက် Password ထုတ်စက်) */
+        .admin-section { margin-top: 20px; padding-top: 15px; border-top: 1px solid #333; display: none; } /* Default ဖျောက်ထားမည် */
+        .admin-trigger { position: absolute; bottom: 5px; right: 5px; width: 20px; height: 20px; cursor: pointer; opacity: 0.1; }
+
+        .container { width: 100%; max-width: 650px; background: #1e1e1e; border: 2px solid var(--gold); border-radius: 12px; padding: 25px; }
+        h2 { background: var(--dark-red); color: var(--gold); text-align: center; padding: 15px; margin: -25px -25px 25px -25px; border-radius: 10px 10px 0 0; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 8px; color: var(--gold); }
+        input, select { width: 100%; padding: 12px; border: 1px solid var(--gold); background: #2a2a2a; color: white; border-radius: 6px; box-sizing: border-box; }
+        .footer { text-align: center; margin-top: 30px; font-size: 0.8rem; color: #777; }
+    </script>
+     </style>  
+    
+</body>
+</html>
